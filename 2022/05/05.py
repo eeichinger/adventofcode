@@ -4,46 +4,40 @@ from typing import List, Set, Dict
 import re
 
 
-def take_until(condition, iterable):
+def take_while(condition, iterable):
     for item in iterable:
-        if condition(item):
+        if not condition(item):
             return
         yield item
 
 
 def parse_stack_spec_line(line: str, stack_dict: dict):
-    text = (" "+line).replace("    ", " [_]").strip().replace("[", "").replace("]", "")
-    specs = text.split(' ')
-    for index, entry in enumerate(specs):
-        stack_dict[index] = ([entry] if entry != '_' else []) + (stack_dict[index] if index in stack_dict else [])
+    # pick chars at each 4th position
+    crates = [line[ix + 1] for ix in range(0, len(line), 4)]
+    for index, crate in enumerate(crates):
+        # insert crate at bottom of stack indicated by its index (empty '' crates result in empty list!)
+        stack_dict[index] = list(crate.strip()) + (stack_dict[index] if index in stack_dict else [])
 
 
-def parse_stack_spec(file: List) -> Dict:
-    pattern = re.compile("(\\s\\d\\s)+")  # read until spec up to stackindex line
-    stack_dict = dict()
-    for line in take_until(lambda l: pattern.match(l), file):
+def parse_stack_spec(file: List[str], stack_dict: Dict[int, List[str]]):
+    for line in take_while(lambda l: '[' in l, file):
         parse_stack_spec_line(line.rstrip(), stack_dict)
-    # print(stack_dict)
-    return stack_dict
 
 
 def parse_move_instructions(ix, line):
+    # parse moving instruction lines
     # "move <count> from <ix_from> to <ix_to>"
-    # print("move parse: ", line)
     m = re.match("move (?P<count>\\d+)+ from (?P<ix_from>\\d+)+ to (?P<ix_to>\\d+)+", line)
-    count = int(m.group("count"))
-    ix_from = int(m.group("ix_from"))-1  # 0-based
-    ix_to = int(m.group("ix_to"))-1  # 0-based
-    # print("count: ", count, ", from:", ix_from, ", to:", ix_to)
-    return [ix, count, ix_from, ix_to]
+    # return 0-based indices
+    return [ix, int(m.group("count")), int(m.group("ix_from")) - 1, int(m.group("ix_to")) - 1]
 
 
-def print_stacks(stack_dict):
+def debug_print_stacks(stack_dict):
     for ix, stack in stack_dict.items():
         print("{}:{}".format(ix, "".join(stack)))
 
 
-def execute_move(move_spec: List, stack_dict: Dict):
+def execute_move(move_spec: List, is_crater9001: bool, stack_dict: Dict):
     [ix, count, ix_from, ix_to] = move_spec
     from_stack = stack_dict[ix_from]
     to_stack = stack_dict[ix_to]
@@ -51,8 +45,10 @@ def execute_move(move_spec: List, stack_dict: Dict):
     target_count_to = len(to_stack) + count
     # print("{}: executing move count:{} from {}({}) to {}".format(ix, count, ix_from, len(from_stack), ix_to))
     assert count <= len(from_stack)
-#    to_stack = to_stack + list(reversed(from_stack[(-count):]))  # version for old cratemover 9000: move one-by-one
-    to_stack = to_stack + list(from_stack[(-count):])  # version for cratemover 9001: dont reverse!
+    crates_to_move = from_stack[(-count):]
+    if not is_crater9001:
+        crates_to_move.reverse()  # version for old cratemover 9000: move one-by-one results in reverse order
+    to_stack = to_stack + list(crates_to_move)
     from_stack = from_stack[:(-count)]
     stack_dict[ix_from] = from_stack
     stack_dict[ix_to] = to_stack
@@ -60,22 +56,32 @@ def execute_move(move_spec: List, stack_dict: Dict):
     assert len(to_stack) == target_count_to
 
 
-def main(file: List[str]):
-    stack_dict = parse_stack_spec(file)
-    # print("start:")
-    # print_stacks(stack_dict)
+def move_crates(move_instructions: List, is_crater9001: bool, stack_dict: Dict):
+    for ix, line in move_instructions:
+        move_spec = parse_move_instructions(ix, line.strip())
+        execute_move(move_spec, is_crater9001, stack_dict)
+        # print_stacks(stack_dict)
+
+
+def main(file: List[str], is_crater9001: bool, expected_result: str):
+    stack_dict = dict()
+    parse_stack_spec(file, stack_dict)
+    # debug_print_stacks(stack_dict)
 
     next(file)  # skip empty line between stack and move specs
 
-    for ix, line in enumerate(file):
-        move_spec = parse_move_instructions(ix, line.strip())
-        execute_move(move_spec, stack_dict)
-        # print_stacks(stack_dict)
+    move_crates(enumerate(file), is_crater9001, stack_dict)
 
     top_elems = [(stack_dict[ix].pop() if len(stack_dict[ix]) > 0 else '') for ix in range(0, len(stack_dict))]
-    print("".join(top_elems))
+    result = "".join(top_elems)
+    print(result)
+    assert result == expected_result
 
 
 if __name__ == '__main__':
-    with open('05.txt') as f:
-        main(f)
+    source = ['05.txt', 'RTGWZTHLD', 'STHGRZZFR']
+    # source = ['05-test.txt', 'CMZ']
+    with open(source[0]) as f:
+        main(f, False, source[1])
+    with open(source[0]) as f:
+        main(f, True, source[2])
