@@ -32,8 +32,8 @@ def parse_move_instructions(ix, line):
     # print("move parse: ", line)
     m = re.match("move (?P<count>\\d+)+ from (?P<ix_from>\\d+)+ to (?P<ix_to>\\d+)+", line)
     count = int(m.group("count"))
-    ix_from = int(m.group("ix_from"))
-    ix_to = int(m.group("ix_to"))
+    ix_from = int(m.group("ix_from"))-1  # 0-based
+    ix_to = int(m.group("ix_to"))-1  # 0-based
     # print("count: ", count, ", from:", ix_from, ", to:", ix_to)
     return [ix, count, ix_from, ix_to]
 
@@ -44,22 +44,16 @@ def print_stacks(stack_dict):
 
 
 def execute_move(move_spec: List, stack_dict: Dict):
-    ix = move_spec[0]
-    count = move_spec[1]
-    ix_from = move_spec[2] - 1
-    ix_to = move_spec[3] - 1
+    [ix, count, ix_from, ix_to] = move_spec
     from_stack = stack_dict[ix_from]
     to_stack = stack_dict[ix_to]
     target_count_from = len(from_stack) - count
     target_count_to = len(to_stack) + count
-    print("{}: executing move count:{} from {}({}) to {}".format(ix, count, ix_from, len(from_stack), ix_to))
+    # print("{}: executing move count:{} from {}({}) to {}".format(ix, count, ix_from, len(from_stack), ix_to))
     assert count <= len(from_stack)
-    elems_to_move = from_stack[(-count):]
-    # elems_to_move.reverse()
-    # print("elems_to_move:", elems_to_move)
+#    to_stack = to_stack + list(reversed(from_stack[(-count):]))  # version for old cratemover 9000: move one-by-one
+    to_stack = to_stack + list(from_stack[(-count):])  # version for cratemover 9001: dont reverse!
     from_stack = from_stack[:(-count)]
-    # print("from_stack new:", from_stack)
-    to_stack = to_stack + list(reversed(elems_to_move))
     stack_dict[ix_from] = from_stack
     stack_dict[ix_to] = to_stack
     assert len(from_stack) == target_count_from
@@ -68,15 +62,15 @@ def execute_move(move_spec: List, stack_dict: Dict):
 
 def main(file: List[str]):
     stack_dict = parse_stack_spec(file)
-    print("start:")
-    print_stacks(stack_dict)
+    # print("start:")
+    # print_stacks(stack_dict)
 
     next(file)  # skip empty line between stack and move specs
 
     for ix, line in enumerate(file):
         move_spec = parse_move_instructions(ix, line.strip())
         execute_move(move_spec, stack_dict)
-        print_stacks(stack_dict)
+        # print_stacks(stack_dict)
 
     top_elems = [(stack_dict[ix].pop() if len(stack_dict[ix]) > 0 else '') for ix in range(0, len(stack_dict))]
     print("".join(top_elems))
