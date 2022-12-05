@@ -41,19 +41,12 @@ def execute_move(move_spec: List, is_crater9001: bool, stack_dict: Dict):
     [ix, count, ix_from, ix_to] = move_spec
     from_stack = stack_dict[ix_from]
     to_stack = stack_dict[ix_to]
-    target_count_from = len(from_stack) - count
-    target_count_to = len(to_stack) + count
-    # print("{}: executing move count:{} from {}({}) to {}".format(ix, count, ix_from, len(from_stack), ix_to))
-    assert count <= len(from_stack)
-    crates_to_move = from_stack[(-count):]
+    # print("move {}: executing count:{} from {}({}) to {}".format(ix, count, ix_from, len(from_stack), ix_to))
+    crates_to_move = from_stack[-count:]
     if not is_crater9001:
         crates_to_move.reverse()  # version for old cratemover 9000: move one-by-one results in reverse order
-    to_stack = to_stack + list(crates_to_move)
-    from_stack = from_stack[:(-count)]
-    stack_dict[ix_from] = from_stack
-    stack_dict[ix_to] = to_stack
-    assert len(from_stack) == target_count_from
-    assert len(to_stack) == target_count_to
+    stack_dict[ix_to] = to_stack + list(crates_to_move)
+    stack_dict[ix_from] = from_stack[:-count]
 
 
 def move_crates(move_instructions: List, is_crater9001: bool, stack_dict: Dict):
