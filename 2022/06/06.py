@@ -15,7 +15,7 @@ def detect_message(input: str, marker_size: int, expected_result: int):
             break
 
     print("result: {}, expected_result:{}, marker:{}, buffer:{}"
-          .format(result, expected_result, "".join(marker), "".join(buffer)))
+          .format(result, expected_result, "".join(marker), "".join(buffer)[:100]))
     assert result == expected_result
 
 
@@ -26,5 +26,7 @@ def main(source: List):
 
 
 if __name__ == '__main__':
-    with open('06-test2.txt') as f:
+    with open('06-data-1.txt') as f:
+        main(f)
+    with open('06-data-2.txt') as f:
         main(f)
