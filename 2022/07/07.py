@@ -48,20 +48,6 @@ def cli_exec(curdir: AnyNode, argv: List[str]):
     assert False
 
 
-def take_while(condition, iterable):
-    for item in iterable:
-        if not condition(item):
-            return
-        yield item
-
-
-def take_until(condition, iterable):
-    for item in iterable:
-        if condition(item):
-            return
-        yield item
-
-
 def calc_dirsize(curdir: AnyNode):
     childsizes = [calc_dirsize(subdir) for subdir in curdir.children]
     return curdir.size + sum(childsizes)
@@ -71,7 +57,7 @@ def main(source: List[str]) -> None:
     rootdir = AnyNode(id='/', size=0, isdir=True)
     curdir = rootdir
     # customised: first line contains expected size for auto-verification
-    expected_size = int(source[0])
+    (expected_size1, expected_size2) = [int(sise) for sise in source[0].split(":")]
     for line in source[1:]:
         parts = line.strip().split(' ')
         # print("processing: " + line)
@@ -80,11 +66,22 @@ def main(source: List[str]) -> None:
         if is_int(parts[0]):
             add_node_to_parent(curdir, parts[1], False, int(parts[0]))
     total_dir_sizes = [(adir.id, calc_dirsize(adir)) for adir in PostOrderIter(rootdir) if adir.isdir]
+
+    # part 1
     nodes_smaller_than_100000 = [adir[1] for adir in total_dir_sizes if adir[1] <= 100000]
     total_size_nodes_smaller_than_100000 = sum(nodes_smaller_than_100000)
     # print(RenderTree(rootdir))
     print(total_size_nodes_smaller_than_100000)
-    assert total_size_nodes_smaller_than_100000 == expected_size
+    assert total_size_nodes_smaller_than_100000 == expected_size1
+
+    # part 2
+    total_used_size = calc_dirsize(rootdir)
+    unused_size = 70000000 - total_used_size
+    need_to_free = 30000000 - unused_size
+    nodes_larger_than_need_to_free = [adir[1] for adir in total_dir_sizes if adir[1] >= need_to_free]
+    smallest_dirsize = min(nodes_larger_than_need_to_free)
+    print(smallest_dirsize)
+    assert smallest_dirsize == expected_size2
 
 
 if __name__ == '__main__':
