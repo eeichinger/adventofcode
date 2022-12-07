@@ -12,11 +12,14 @@ def cd(curdir: List[str], targetdir) -> List[str]:
     return curdir + [targetdir]
 
 
-def update_total_size_recursive(total_dir_sizes: dict[str, int], curdir: List[str], size: int):
-    dirpath = "/" + "/".join(curdir)
+def ensure_dir_initialized(total_dir_sizes: Dict[tuple, int], curdir: List[str]):
+    dirpath = tuple(curdir)
     if dirpath not in total_dir_sizes:
         total_dir_sizes[dirpath] = 0
-    total_dir_sizes[dirpath] += size
+
+
+def update_total_size_recursive(total_dir_sizes: dict[tuple, int], curdir: List[str], size: int):
+    total_dir_sizes[tuple(curdir)] += size
     if curdir:
         # update parent size if not already root
         update_total_size_recursive(total_dir_sizes, curdir[:-1], size)
@@ -35,6 +38,7 @@ def main(source: Iterable[str], expected_result: str) -> None:
         if argv[0] == '$' and argv[1] == 'cd':
             # found cd instr, calc new curdir
             curdir = cd(curdir, argv[2])
+            ensure_dir_initialized(total_dir_sizes, curdir)
         elif argv[0].isdigit():
             # found file, add filesize in all dirs up the hierarchy
             update_total_size_recursive(total_dir_sizes, curdir, int(argv[0]))
@@ -46,7 +50,7 @@ def main(source: Iterable[str], expected_result: str) -> None:
     assert total_size_nodes_smaller_than_100000 == expected_size1
 
     # part 2
-    total_used_size = total_dir_sizes['/']
+    total_used_size = total_dir_sizes[()]
     unused_size = 70000000 - total_used_size
     need_to_free = 30000000 - unused_size
     nodes_larger_than_need_to_free = [adirsize for adirsize in total_dir_sizes.values() if adirsize >= need_to_free]
