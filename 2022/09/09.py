@@ -17,56 +17,44 @@ def move(knot: tuple[int, int], x: int, y: int):
     return (knot[0] + x, knot[1] + y)
 
 
-def move_rope_head_single_step(rope: List[tuple[int, int]], x, y) -> List[tuple[int, int]]:
-    new_rope = [move(rope[0], x, y)]
-    # print("move head {}, x={}, y={}".format(rope[0], x, y))
-    for i in range(0, len(rope) - 1):
-        (new_posH, new_posT) = move_single_knot(rope[i], new_rope[i], rope[i + 1])
-        new_rope.append(new_posT)
-        # print("processed knot[{}]={}, knot[{}]={}".format(i, new_rope[i], i+1, new_rope[i+1]))
-    return new_rope
+def move_rope_head_single_step(rope: List[tuple[int, int]], x: int, y: int) -> List[tuple[int, int]]:
+    rope[0] = move(rope[0], x, y)  # move head
+    for i in range(0, len(rope) - 1):  # process remaining knots
+        rope[i + 1] = move_next_knot(rope[i], rope[i + 1])
+    return rope
 
 
-def move_single_knot(old_posH: tuple[int, int], new_posH: tuple[int, int], posT: tuple[int, int]):
-    diff = (new_posH[0] - posT[0], new_posH[1] - posT[1])
-    # print("diff({}, {})".format(diff[0], diff[1]))
+def move_rope_head_multi_step(rope: List[tuple[int, int]], visitedT: Set[tuple[int, int]],
+                              steps: int, x: int, y: int) -> None:
+    for step in range(0, steps):
+        move_rope_head_single_step(rope, x, y)
+        visitedT.add(rope[-1])
+
+
+def move_next_knot(pos: tuple[int, int], posNext: tuple[int, int]) -> tuple[int, int]:
+    diff = (pos[0] - posNext[0], pos[1] - posNext[1])
     if (abs(diff[0]) > 1 or abs(diff[1]) > 1):
-        # move towards head
+        # move towards head if distance>1
         vec = (sgn(diff[0]), sgn(diff[1]))
-        # print("head to far way, moving tail vec({}, {})".format(vec[0], vec[1]))
-        posT = (posT[0] + vec[0], posT[1] + vec[1])
-    # print("posH[{}], posT[{}]".format(new_posH, posT))
-    return (new_posH, posT)
+        posNext = (posNext[0] + vec[0], posNext[1] + vec[1])
+    return posNext
 
 
-def processInstruction(instr: tuple[str, int], rope: List[tuple[int, int]], visitedT: Set[tuple[int, int]]) \
-    -> tuple[List[tuple[int, int]], set[tuple[int, int]]]:
+def process_instruction(instr: tuple[str, int], rope: List[tuple[int, int]], visitedT: Set[tuple[int, int]]) \
+    -> None:
     (direction, steps) = instr
     # print("processing dir:{}, steps:{}".format(direction, steps))
     if direction.lower() == "r":
-        for step in range(0, steps):
-            rope = move_rope_head_single_step(rope, 1, 0)
-            # print("tail now at {}".format(rope[-1]))
-            visitedT.add(rope[-1])
+        move_rope_head_multi_step(rope, visitedT, steps, 1, 0)
     elif direction.lower() == "l":
-        for step in range(0, steps):
-            rope = move_rope_head_single_step(rope, -1, 0)
-            # print("tail now at {}".format(rope[-1]))
-            visitedT.add(rope[-1])
+        move_rope_head_multi_step(rope, visitedT, steps, -1, 0)
     elif direction.lower() == "u":
-        for step in range(0, steps):
-            rope = move_rope_head_single_step(rope, 0, 1)
-            # print("tail now at {}".format(rope[-1]))
-            visitedT.add(rope[-1])
+        move_rope_head_multi_step(rope, visitedT, steps, 0, 1)
     elif direction.lower() == "d":
-        for step in range(0, steps):
-            rope = move_rope_head_single_step(rope, 0, -1)
-            # print("tail now at {}".format(rope[-1]))
-            visitedT.add(rope[-1])
+        move_rope_head_multi_step(rope, visitedT, steps, 0, -1)
     else:
         print("cant process {}".format(instr))
         assert False
-    return (rope, visitedT)
 
 
 def main(source: Iterable[str], expected_result: str) -> None:
@@ -76,13 +64,13 @@ def main(source: Iterable[str], expected_result: str) -> None:
 
 
 def run(source: Iterable[str], rope_length: int, expected_result: str) -> None:
-    rope = [(0, 0) for i in range(0, rope_length)]
+    rope = [(0, 0) for _ in range(0, rope_length)]
     visitedT: Set[tuple[int, int]] = set()
     visitedT.add(rope[-1])
     for line in source:
         (direction, stepsStr) = line.split(" ")
         instr = (direction, int(stepsStr))
-        (rope, visitedT) = processInstruction(instr, rope, visitedT)
+        process_instruction(instr, rope, visitedT)
 
     result = len(visitedT)
     print("visited: {}, expected: {}".format(result, expected_result))
@@ -132,9 +120,10 @@ def test_oneoff_position_move_step_up():
 
 
 if __name__ == '__main__':
-    # test_same_position_move_step_right()
-    # test_oneoff_position_move_step_right()
-    # test_oneoff_position_move_step_up()
+    test_same_position_move_step_right()
+    test_oneoff_position_move_step_right()
+    test_oneoff_position_move_step_up()
+
     with open('09-test.txt') as f:
         expected = f.readline()
         main(f.readlines(), expected)
