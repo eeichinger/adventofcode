@@ -101,7 +101,7 @@ monkeys_part1 = [
 ]
 
 
-def take_turn(round_nr: int, monkeys: List, cur_monkey_index: int):
+def take_turn(round_nr: int, monkeys: List, cur_monkey_index: int, kgv: int):
     cur_monkey = monkeys[cur_monkey_index]
     worry_levels = cur_monkey[0]
     op = cur_monkey[1]
@@ -111,34 +111,43 @@ def take_turn(round_nr: int, monkeys: List, cur_monkey_index: int):
 
     cur_monkey[5] += len(worry_levels)  # inspections
 
-    print("{}: Monkey {}:".format(round_nr, cur_monkey_index))
+    # print("{}: Monkey {}:".format(round_nr, cur_monkey_index))
     for worry_level in worry_levels:
         item = worry_level
         # print("inspecting item {}".format(item))
         worry_level = op(worry_level)
-        worry_level //= 3
         cur_monkey[0] = cur_monkey[0][1:]
+        if (kgv > 0):
+            worry_level = worry_level % kgv
+        else:
+            worry_level //= 3
+
         if 0 == worry_level % test_val:
-            print(
-                "{}:    item {} divisible by {}, throwing worry_level {} to monkey {}".format(round_nr, item, test_val,
-                                                                                              worry_level,
-                                                                                              target_monkey_true))
+            # print(
+            #     "{}:    item {} divisible by {}, throwing worry_level {} to monkey {}".format(round_nr, item, test_val,
+            #                                                                                   worry_level,
+            #                                                                                   target_monkey_true))
             monkeys[target_monkey_true][0].append(worry_level)
         else:
-            print(
-                "{}:    item {} NOT divisible by {}, throwing worry_level {} to monkey {}".format(round_nr, item,
-                                                                                                  test_val,
-                                                                                                  worry_level,
-                                                                                                  target_monkey_false))
+            # print(
+            #     "{}:    item {} NOT divisible by {}, throwing worry_level {} to monkey {}".format(round_nr, item,
+            #                                                                                       test_val,
+            #                                                                                       worry_level,
+            #                                                                                       target_monkey_false))
             monkeys[target_monkey_false][0].append(worry_level)
 
 
-def main1(monkeys: List, expected_result: str) -> None:
-    for rounds in range(0, 20):
+def main1(monkeys: List, total_rounds: int, expected_result: str) -> None:
+    kgv = 0
+    if total_rounds > 20:
+        kgv = math.prod([monkey[2] for monkey in monkeys])
+    for rounds in range(0, total_rounds):
         for cur_monkey_index in range(0, len(monkeys)):
-            take_turn(rounds, monkeys, cur_monkey_index)
-        for cur_monkey_index in range(0, len(monkeys)):
-            print("Monkey {}: {}".format(cur_monkey_index, monkeys[cur_monkey_index][0]))
+            take_turn(rounds, monkeys, cur_monkey_index, kgv)
+        if (rounds + 1 in [1, 20, 1000, 2000, 3000, 4000]):
+            print("After round {}:".format(rounds + 1))
+            for cur_monkey_index in range(0, len(monkeys)):
+                print("    Monkey {}: inspections {}".format(cur_monkey_index, monkeys[cur_monkey_index][5]))
 
     inspections = sorted([cur_monkey[5] for cur_monkey in monkeys])
     top1 = inspections[-1]
@@ -155,8 +164,10 @@ def test():
 
 if __name__ == '__main__':
     # test()
-    main1(monkeys_part1_test, "10605")
-    main1(monkeys_part1, "56595")
+    # main1(monkeys_part1_test, 20, "10605")
+    # main1(monkeys_part1_test, 10000, "2713310158")
+    # main1(monkeys_part1, 20, "56595")
+    main1(monkeys_part1, 10000, "15693274740")
     # with open('10-test.txt') as f:
     #     expected = f.readline()
     #     main(f.readlines(), expected)
