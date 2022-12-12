@@ -61,10 +61,10 @@ def findPath(matrix, start_x=0, start_y=0, end_x=0, end_y=0):
         curr = q.popleft()
         # value of the current cell
         curr_height = matrix[curr.y][curr.x]
-        print("current node ({},{},{}), queuesize={}".format(curr.x, curr.y, curr_height, len(q)))
+        # print("current node ({},{},{}), queuesize={}".format(curr.x, curr.y, curr_height, len(q)))
         # return if the destination is found
         if curr.x == end_x and curr.y == end_y:
-            print("REACHED END ({},{},{})".format(curr.x, curr.y, curr_height))
+            # print("REACHED END ({},{},{})".format(curr.x, curr.y, curr_height))
             path = []
             getPath(curr, path)
             return path
@@ -83,17 +83,17 @@ def findPath(matrix, start_x=0, start_y=0, end_x=0, end_y=0):
             # from the current position
             next_height = matrix[next_y][next_x]
             next_key = (next_x, next_y)
-            print("    checking node ({},{},{})".format(next_x, next_y, next_height))
+            # print("    checking node ({},{},{})".format(next_x, next_y, next_height))
             if next_height - curr_height > 1:
                 continue
             if (next_key in visited):
-                print("    --> already seen")
+                # print("    --> already seen")
                 continue
 
             # construct the next cell node
             next = Node(next_x, next_y, curr)
             # enqueue it and mark it as visited
-            print("    --> found candidate ({},{},{})".format(next_x, next_y, next_height))
+            # print("    --> found candidate ({},{},{})".format(next_x, next_y, next_height))
             q.append(next)
             visited.add(next_key)
 
@@ -115,29 +115,49 @@ def main(source: List[str], expected_result: str) -> None:
             start_x = line.index('S')
             start_y = len(matrix)
             line = line.replace('S', 'a')
-            print("found start({}, {})".format(start_x, start_y))
         if ('E' in line):
             end_x = line.index('E')
             end_y = len(matrix)
             line = line.replace('E', 'z')
-            print("found end({}, {})".format(end_x, end_y))
 
         heights_str = line.strip()
         print(heights_str)
         heights = [heights_index.index(h) for h in heights_str]
         matrix.append(heights)
 
-    path = findPath(matrix, start_x, start_y, end_x, end_y)
-    result = len(path) - 1
-    print("result: {}, expected:{}".format(result, expected_result))
-    assert result == int(expected_result)
+    print("found start at ({}, {})".format(start_x, start_y))
+    print("found end at ({}, {})".format(end_x, end_y))
+    all_start_positions = {(start_x, start_y)}
+    for y in range(len(matrix)):
+        for x in range(len(matrix[0])):
+            if (matrix[y][x] == 0):
+                all_start_positions.add((x, y))
+
+    results = []
+    result1 = -1
+    for start_pos in all_start_positions:
+        path = findPath(matrix, start_pos[0], start_pos[1], end_x, end_y)
+        if not path:
+            continue
+        result = len(path) - 1
+        if (start_pos == (start_x, start_y)):
+            result1 = result
+        results.append((start_pos, len(path) - 1))
+
+    result2 = min([start_pos[1] for start_pos in results])
+
+    (expected_result1, expected_result2) = expected_result.split(":")
+    print("result1: {}, expected1:{}".format(result1, expected_result1))
+    assert result1 == int(expected_result1)
+    print("result2: {}, expected2:{}".format(result2, expected_result2))
+    assert result2 == int(expected_result2)
 
 
 if __name__ == '__main__':
     # test()
-    # with open('12-test.txt') as f:
-    #     expected = f.readline()
-    #     main(f.readlines(), expected)
+    with open('12-test.txt') as f:
+        expected = f.readline()
+        main(f.readlines(), expected)
     with open('12-data.txt') as f:
         expected = f.readline()
         main(f.readlines(), expected)
