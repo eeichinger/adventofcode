@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import copy
 from typing import List, Set, Iterable
 import math
 
@@ -164,10 +164,10 @@ def test():
 
 if __name__ == '__main__':
     # test()
-    # main1(monkeys_part1_test, 20, "10605")
-    # main1(monkeys_part1_test, 10000, "2713310158")
-    # main1(monkeys_part1, 20, "56595")
-    main1(monkeys_part1, 10000, "15693274740")
+    main1(copy.deepcopy(monkeys_part1_test), 20, "10605")
+    main1(copy.deepcopy(monkeys_part1_test), 10000, "2713310158")
+    main1(copy.deepcopy(monkeys_part1), 20, "56595")
+    main1(copy.deepcopy(monkeys_part1), 10000, "15693274740")
     # with open('10-test.txt') as f:
     #     expected = f.readline()
     #     main(f.readlines(), expected)
