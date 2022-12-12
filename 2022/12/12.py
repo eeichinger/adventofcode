@@ -22,6 +22,9 @@ class Point:
     def add(self, other: 'Point'):
         return Point(self.x + other.x, self.y + other.y)
 
+    def within(self, bottom_left: 'Point', top_right: 'Point'):
+        return ((bottom_left.x <= self.x < top_right.x) and (bottom_left.y <= self.y < top_right.y))
+
 
 # A queue node used in BFS
 @dataclass(frozen=True, slots=True)
@@ -38,7 +41,7 @@ class Node:
         return self._coords.y
 
     @property
-    def key(self) -> Point:
+    def coords(self) -> Point:
         return self._coords
 
     def is_match(self, other: Point):
@@ -47,21 +50,18 @@ class Node:
     def add(self, other: Point):
         return Node(self._coords.add(other))
 
-
-# Below lists detail all four possible movements from a cell
-allowed_movements = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-
-
-# Utility function to find path from source to destination
-def getPath(node, path=()):
-    if node:
-        path = getPath(node.parent, path)
-        path.append(node)
-    return path
+    # Utility function to find path from source to destination
+    def path(self) -> tuple['Node', ...]:
+        if self.parent:
+            return (self,) + self.parent.path()
+        return (self,)
 
 
 # Find the shortest route in a matrix from source cell to destination cell
 def findPath(matrix, start_pos: Point = Point(0, 0), end_pos: Point = Point(0, 0)):
+    # Below lists detail all four possible movements from a cell
+    allowed_movements = {Point(1, 0), Point(-1, 0), Point(0, 1), Point(0, -1)}
+
     # base case
     if not matrix or not len(matrix):
         return
@@ -75,50 +75,48 @@ def findPath(matrix, start_pos: Point = Point(0, 0), end_pos: Point = Point(0, 0
     q.append(src)
 
     # set to check if the matrix cell is visited before or not
-    visited_coords = {src.key}
+    visited_coords: Set[Point] = {src.coords}
 
     # loop till queue is empty
     while q:
 
         # dequeue node and process it
-        curr = q.popleft()
+        cur_node = q.popleft()
         # value of the current cell
-        curr_height = matrix[curr.y][curr.x]
+        curr_height = matrix[cur_node.y][cur_node.x]
         # print("current node ({},{},{}), queuesize={}".format(curr.x, curr.y, curr_height, len(q)))
         # return if the destination is found
-        # if curr.x == end[0] and curr.y == end[1]:
-        if curr.is_match(end_pos):
+        if cur_node.is_match(end_pos):
             # print("REACHED END ({},{},{})".format(curr.x, curr.y, curr_height))
-            path = []
-            getPath(curr, path)
-            return path
+            return cur_node.path()
 
         # check all four possible movements from the current cell
         # and recur for each valid movement
         for allowed_movement in allowed_movements:
-            # get next position coordinates using the value of the current cell
-            candidate_coords = Point(curr.x + allowed_movement[0], curr.y + allowed_movement[1])
+            # get next position coordinates using the value of the current node
+            candidate_coords = cur_node.coords.add(allowed_movement)
 
             # bounds-checking
-            if not ((0 <= candidate_coords.x < N.x) and (0 <= candidate_coords.y < N.y)):
+            if not candidate_coords.within(Point(0, 0), N):
                 continue
-            # check if it is possible to go to the next position
-            # from the current position
-            next_height = matrix[candidate_coords.y][candidate_coords.x]
-            # print("    checking node ({},{},{})".format(next_x, next_y, next_height))
-            if next_height - curr_height > 1:
-                continue
+
             if (candidate_coords in visited_coords):
                 # print("    --> already seen")
                 continue
 
+            # check if it is allowed to go to the next position from the current position
+            next_height = matrix[candidate_coords.y][candidate_coords.x]
+            # print("    checking node ({},{},{})".format(next_x, next_y, next_height))
+            if next_height - curr_height > 1:
+                continue
+
             # enqueue it and mark it as visited
             # print("    --> found candidate ({},{},{})".format(next_x, next_y, next_height))
-            q.append(Node(candidate_coords, curr))
+            q.append(Node(candidate_coords, cur_node))
             visited_coords.add(candidate_coords)
 
     # return None if the path is not possible
-    return
+    return None
 
 
 def parse_heightmap(source: List[str]) -> tuple[List[List[int]], Point, Point]:
