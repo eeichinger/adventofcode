@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
 import copy
-from typing import List, Set, Iterable
+from typing import List, Set, Iterable, Type
 import math
-
+from dataclasses import dataclass
 from collections import deque
 
 
 # A queue node used in BFS
+@dataclass(frozen=True)
 class Node:
+    __slots__ = ['parent', 'x', 'y']
+
     # (x, y) represents coordinates of a cell in the matrix
     # maintain a parent node for the printing path
-    def __init__(self, x, y, parent=None):
-        self.x = x
-        self.y = y
-        self.parent = parent
+    def __init__(self, coords: tuple[int, int], parent=None):
+        object.__setattr__(self, "x", coords[0])
+        object.__setattr__(self, "y", coords[1])
+        object.__setattr__(self, "parent", parent)
 
     def __repr__(self):
         return str((self.x, self.y))
 
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
+    def __eq__(self, otherNode):
+        return self.is_match((other.x, other.y))
+
+    def is_match(self, other: tuple[int, int]):
+        return self.x == other[0] and self.y == other[1]
 
 
 # Below lists detail all four possible movements from a cell
@@ -27,14 +33,15 @@ allowed_movements = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
 
 # Utility function to find path from source to destination
-def getPath(node, path=[]):
+def getPath(node, path=()):
     if node:
-        getPath(node.parent, path)
+        path = getPath(node.parent, path)
         path.append(node)
+    return path
 
 
 # Find the shortest route in a matrix from source cell to destination cell
-def findPath(matrix, start_x=0, start_y=0, end_x=0, end_y=0):
+def findPath(matrix, start=(0, 0), end=(0, 0)):
     # base case
     if not matrix or not len(matrix):
         return
@@ -45,7 +52,8 @@ def findPath(matrix, start_x=0, start_y=0, end_x=0, end_y=0):
 
     # create a queue and enqueue the first node
     q = deque()
-    src = Node(start_x, start_y)
+    src = Node(start)
+    src
     q.append(src)
 
     # set to check if the matrix cell is visited before or not
@@ -63,7 +71,7 @@ def findPath(matrix, start_x=0, start_y=0, end_x=0, end_y=0):
         curr_height = matrix[curr.y][curr.x]
         # print("current node ({},{},{}), queuesize={}".format(curr.x, curr.y, curr_height, len(q)))
         # return if the destination is found
-        if curr.x == end_x and curr.y == end_y:
+        if curr.x == end[0] and curr.y == end[1]:
             # print("REACHED END ({},{},{})".format(curr.x, curr.y, curr_height))
             path = []
             getPath(curr, path)
@@ -90,21 +98,16 @@ def findPath(matrix, start_x=0, start_y=0, end_x=0, end_y=0):
                 # print("    --> already seen")
                 continue
 
-            # construct the next cell node
-            next = Node(next_x, next_y, curr)
             # enqueue it and mark it as visited
             # print("    --> found candidate ({},{},{})".format(next_x, next_y, next_height))
-            q.append(next)
+            q.append(Node((next_x, next_y), curr))
             visited.add(next_key)
 
     # return None if the path is not possible
     return
 
 
-heights_index = "abcdefghijklmnopqrstuvwxyz"
-
-
-def main(source: List[str], expected_result: str) -> None:
+def parse_heightmap(source):
     matrix: List[List[int]] = []
     start_x = -1
     start_y = -1
@@ -122,8 +125,13 @@ def main(source: List[str], expected_result: str) -> None:
 
         heights_str = line.strip()
         print(heights_str)
-        heights = [heights_index.index(h) for h in heights_str]
+        heights = [(ord(h) - ord('a')) for h in heights_str]
         matrix.append(heights)
+    return matrix, (start_x, start_y), (end_x, end_y)
+
+
+def main(source: List[str], expected_result: str) -> None:
+    matrix, (start_x, start_y), (end_x, end_y) = parse_heightmap(source)
 
     print("found start at ({}, {})".format(start_x, start_y))
     print("found end at ({}, {})".format(end_x, end_y))
@@ -136,7 +144,7 @@ def main(source: List[str], expected_result: str) -> None:
     results = []
     result1 = -1
     for start_pos in all_start_positions:
-        path = findPath(matrix, start_pos[0], start_pos[1], end_x, end_y)
+        path = findPath(matrix, start_pos, (end_x, end_y))
         if not path:
             continue
         result = len(path) - 1
