@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import copy
-from typing import List, Set, Iterable, Type
+from typing import List, Set, Iterable, Type, Deque
 import math
 from dataclasses import dataclass
 from collections import deque
@@ -9,23 +9,33 @@ from collections import deque
 # A queue node used in BFS
 @dataclass(frozen=True)
 class Node:
-    __slots__ = ['parent', 'x', 'y']
+    __slots__ = ['parent', '_coords']
 
     # (x, y) represents coordinates of a cell in the matrix
     # maintain a parent node for the printing path
     def __init__(self, coords: tuple[int, int], parent=None):
-        object.__setattr__(self, "x", coords[0])
-        object.__setattr__(self, "y", coords[1])
+        object.__setattr__(self, "_coords", coords)
         object.__setattr__(self, "parent", parent)
 
     def __repr__(self):
-        return str((self.x, self.y))
+        return str(self._coords)
 
     def __eq__(self, otherNode):
         return self.is_match((other.x, other.y))
 
+    def get_x(self):
+        return self._coords[0]
+    x = property(fget=get_x, doc='x coordinate')
+
+    def get_y(self):
+        return self._coords[1]
+    y = property(fget=get_y, doc='x coordinate')
+
+    def key(self):
+        return self._coords
+
     def is_match(self, other: tuple[int, int]):
-        return self.x == other[0] and self.y == other[1]
+        return self._coords == other
 
 
 # Below lists detail all four possible movements from a cell
@@ -51,16 +61,15 @@ def findPath(matrix, start=(0, 0), end=(0, 0)):
     N_y = len(matrix)
 
     # create a queue and enqueue the first node
-    q = deque()
+    q: Deque[Node] = deque()
     src = Node(start)
-    src
     q.append(src)
 
     # set to check if the matrix cell is visited before or not
     visited = set()
 
-    next_key = (src.x, src.y)
-    visited.add(next_key)
+    # next_key = (src.x, src.y)
+    visited.add(src.key())
 
     # loop till queue is empty
     while q:
@@ -71,7 +80,8 @@ def findPath(matrix, start=(0, 0), end=(0, 0)):
         curr_height = matrix[curr.y][curr.x]
         # print("current node ({},{},{}), queuesize={}".format(curr.x, curr.y, curr_height, len(q)))
         # return if the destination is found
-        if curr.x == end[0] and curr.y == end[1]:
+        # if curr.x == end[0] and curr.y == end[1]:
+        if curr.is_match(end):
             # print("REACHED END ({},{},{})".format(curr.x, curr.y, curr_height))
             path = []
             getPath(curr, path)
