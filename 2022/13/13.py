@@ -679,6 +679,11 @@ def main(source: List, expected: int, expected_decoder_key: int):
 
 
 if __name__ == '__main__':
-    # test()
-    main(part1_test_data, 13, 140)
-    main(part1_data, 5013, 25038)
+    with open('13-test.txt') as f:
+        expected_vals = [int(num) for num in f.readline().strip().split(':')]
+        data = [eval(line) for line in f.readlines() if len(line.strip()) > 0]
+        main(data, expected_vals[0], expected_vals[1])
+    with open('13-data.txt') as f:
+        expected_vals = [int(num) for num in f.readline().strip().split(':')]
+        data = [eval(line) for line in f.readlines() if len(line.strip()) > 0]
+        main(data, expected_vals[0], expected_vals[1])
