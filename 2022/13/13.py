@@ -657,8 +657,9 @@ def is_correct_order(left: any, right: any, lev: int) -> int:
     return 0
 
 
-def main(source: List, expected: int, expected_decoder_key: int):
-    pairs = [(source[i], source[i + 1]) for i in range(0, len(source), 2)]
+def main(items: List, expected: int, expected_decoder_key: int):
+    print("\n==== Part 1: finding correctly ordered packets ====")
+    pairs = [(items[i], items[i + 1]) for i in range(0, len(items), 2)]
     result = 0
     for i, pair in enumerate(pairs):
         print("Pair {}: {} vs {}".format(i + 1, pair[0], pair[1]))
@@ -669,10 +670,11 @@ def main(source: List, expected: int, expected_decoder_key: int):
     assert result == expected
 
     def is_correct_order_curried(left, right):
-        return is_correct_order(left, right, 0)
+        return is_correct_order(left, right, 1)
 
-    sorted_source = sorted(source + [[[2]], [[6]]], key=cmp_to_key(is_correct_order_curried))
-    decoder_key = (sorted_source.index([[2]])+1) * (sorted_source.index([[6]])+1)
+    print("\n==== Part 2: sorting and extracting decoder_key ====")
+    sorted_source = sorted(items + [[[2]], [[6]]], key=cmp_to_key(is_correct_order_curried))
+    decoder_key = (sorted_source.index([[2]]) + 1) * (sorted_source.index([[6]]) + 1)
     print("decoder_key:{}, expected_decoder_key:{}".format(decoder_key, expected_decoder_key))
     assert decoder_key == expected_decoder_key
     # alist.sort(cmp_items_py3)
