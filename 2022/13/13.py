@@ -640,12 +640,9 @@ def is_correct_order(left: any, right: any, lev: int) -> int:
     for i in range(0, min(len(left), len(right))):
         # is left smaller than right?
         order = is_correct_order(left[i], right[i], lev + 2)
-        if (order == -1):
-            return -1
-        if (order == 1):
-            return 1
-        elif (order == 0):
+        if order == 0:
             continue
+        return order
     # left list ran out of elements
     if len(left) < len(right):
         print_nested(lev + 1, "- left list out of elements=right order".format(left, right))
@@ -654,6 +651,7 @@ def is_correct_order(left: any, right: any, lev: int) -> int:
     if len(right) < len(left):
         print_nested(lev + 1, "- right list out of elements=wrong order".format(left, right))
         return 1
+    # can't decide, continue
     return 0
 
 
